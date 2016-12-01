@@ -3,9 +3,14 @@ package edu.kvcc.cis298.cis298assignment4;
 import android.content.Context;
 import android.util.Log;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
+
+import edu.kvcc.cis298.cis298assignment4.data.JsonHandler;
 
 /**
  * Created by David Barnes on 11/3/2015.
@@ -59,40 +64,7 @@ public class BeverageCollection {
 
     //Method to load the beverage list from a CSV file
     private void loadBeverageList() {
+        mBeverages = JsonHandler.ParseJSONBeverageArray(JsonHandler.getJsonArray());
 
-        //Define a scanner
-        Scanner scanner = null;
-
-        try {
-
-            //Instanciate a new scanner
-            scanner = new Scanner(mContext.getResources().openRawResource(R.raw.beverage_list));
-
-            //While the scanner has another line to read
-            while (scanner.hasNextLine()) {
-
-                //Get the next line and split it into parts
-                String line = scanner.nextLine();
-                String parts[] = line.split(",");
-
-                //Assign each part to a local var
-                String id = parts[0];
-                String name = parts[1];
-                String pack = parts[2];
-
-                //setup some vars for doing parsing
-                double price = Double.parseDouble(parts[3]);
-                boolean active = ((parts[4].equals("True")));
-
-                //Add the beverage to the list
-                mBeverages.add(new Beverage(id, name, pack, price, active));
-            }
-
-        //catch any errors that occur and finally close the scanner
-        } catch (Exception e) {
-            Log.e("Read CSV", e.toString());
-        } finally {
-            scanner.close();
-        }
     }
 }
