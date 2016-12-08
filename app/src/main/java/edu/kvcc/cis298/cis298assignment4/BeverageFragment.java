@@ -15,7 +15,7 @@ import android.widget.EditText;
 /**
  * Created by David Barnes on 11/3/2015.
  */
-public class BeverageFragment extends Fragment {
+public class BeverageFragment extends Fragment implements updatable{
 
     //String key that will be used to send data between fragments
     private static final String ARG_BEVERAGE_ID = "crime_id";
@@ -49,7 +49,7 @@ public class BeverageFragment extends Fragment {
         //When created, get the beverage id from the fragment args.
         String beverageId = getArguments().getString(ARG_BEVERAGE_ID);
         //use the id to get the beverage from the singleton
-        mBeverage = BeverageCollection.get(getActivity()).getBeverage(beverageId);
+        mBeverage = BeverageCollection.get(getActivity(),this).getBeverage(beverageId);
     }
 
     @Nullable
@@ -153,5 +153,10 @@ public class BeverageFragment extends Fragment {
 
         //Lastley return the view with all of this stuff attached and set on it.
         return view;
+    }
+
+    @Override
+    public void update() {
+
     }
 }

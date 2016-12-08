@@ -6,6 +6,7 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,7 +18,7 @@ import java.util.List;
 /**
  * Created by David Barnes on 11/3/2015.
  */
-public class BeverageListFragment extends Fragment {
+public class BeverageListFragment extends Fragment implements updatable {
 
     //Private variables for the recycler view and the required adapter
     private RecyclerView mBeverageRecyclerView;
@@ -53,7 +54,7 @@ public class BeverageListFragment extends Fragment {
     //and update changes if it does.
     private void updateUI() {
         //Get the collection of data.
-        BeverageCollection beverageCollection = BeverageCollection.get(getActivity());
+        BeverageCollection beverageCollection = BeverageCollection.get(getActivity(),this);
         //Fetch the list of data from the collection
         List<Beverage> beverages = beverageCollection.getBeverages();
 
@@ -66,6 +67,12 @@ public class BeverageListFragment extends Fragment {
             //adapter already exists, so just call the notify data set changed method to update
             mBeverageAdapter.notifyDataSetChanged();
         }
+    }
+
+    @Override
+    public void update() {
+        mBeverageAdapter = new BeverageAdapter(BeverageCollection.get(getActivity(),this).getBeverages());
+        mBeverageRecyclerView.setAdapter(mBeverageAdapter);
     }
 
     //Private class that is required to get a recyclerview working

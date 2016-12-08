@@ -14,7 +14,7 @@ import java.util.List;
 /**
  * Created by David Barnes on 11/5/2015.
  */
-public class BeveragePagerActivity extends FragmentActivity {
+public class BeveragePagerActivity extends FragmentActivity implements updatable {
 
     //String that can be used as a key for sendin data between activities
     private static final String EXTRA_BEVERAGE_ID = "edu.kvcc.cis298.cis298assignment4.beverage_id";
@@ -43,7 +43,7 @@ public class BeveragePagerActivity extends FragmentActivity {
         mViewPager = (ViewPager) findViewById(R.id.activity_beverage_pager_view_pager);
 
         //Get the beverages from the beverage collection
-        mBeverages = BeverageCollection.get(this).getBeverages();
+        mBeverages = BeverageCollection.get(this,this).getBeverages();
 
         //Create a fragment manager that the view pager adapter needs to operate
         FragmentManager fragmentManager = getSupportFragmentManager();
@@ -74,5 +74,11 @@ public class BeveragePagerActivity extends FragmentActivity {
                 break;
             }
         }
+    }
+
+    @Override
+    public void update() {
+        mBeverages = BeverageCollection.get(this,this).getBeverages();
+        mViewPager.getAdapter().notifyDataSetChanged();
     }
 }
