@@ -6,7 +6,6 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,11 +17,12 @@ import java.util.List;
 /**
  * Created by David Barnes on 11/3/2015.
  */
-public class BeverageListFragment extends Fragment implements updatable {
+public class BeverageListFragment extends Fragment {
 
     //Private variables for the recycler view and the required adapter
     private RecyclerView mBeverageRecyclerView;
     private BeverageAdapter mBeverageAdapter;
+    private BeverageCollection mBeverageCollection;
 
     @Nullable
     @Override
@@ -37,7 +37,7 @@ public class BeverageListFragment extends Fragment implements updatable {
         mBeverageRecyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
 
         //Call the updateUI method to do any remaining setup and get the view displayed
-        updateUI();
+        new CollectionGetter().execute(getActivity());
 
         //return the view
         return view;
@@ -47,32 +47,19 @@ public class BeverageListFragment extends Fragment implements updatable {
     public void onResume() {
         super.onResume();
         //If this fragment is resumed from returning from the detail view, update the UI
-        updateUI();
+        new CollectionGetter().execute(getActivity());
     }
 
     //Method to setup the view with an adapter if it doesn't already have one.
     //and update changes if it does.
     private void updateUI() {
         //Get the collection of data.
-        BeverageCollection beverageCollection = BeverageCollection.get(getActivity(),this);
-        //Fetch the list of data from the collection
-        List<Beverage> beverages = beverageCollection.getBeverages();
 
-        //If there is no adapter, make a new one and send it in the list of beverages
-        if (mBeverageAdapter == null) {
+        //Fetch the list of data from the collection
+        List<Beverage> beverages = mBeverageCollection.getBeverages();
             mBeverageAdapter = new BeverageAdapter(beverages);
             //set the adapter for the recyclerview to the newly created adapter
             mBeverageRecyclerView.setAdapter(mBeverageAdapter);
-        } else {
-            //adapter already exists, so just call the notify data set changed method to update
-            mBeverageAdapter.notifyDataSetChanged();
-        }
-    }
-
-    @Override
-    public void update() {
-        mBeverageAdapter = new BeverageAdapter(BeverageCollection.get(getActivity(),this).getBeverages());
-        mBeverageRecyclerView.setAdapter(mBeverageAdapter);
     }
 
     //Private class that is required to get a recyclerview working
@@ -156,6 +143,14 @@ public class BeverageListFragment extends Fragment implements updatable {
         @Override
         public int getItemCount() {
             return mBeverages.size();
+        }
+    }
+
+    private class CollectionGetter extends BeverageCollection.BeverageCollectingGetter{
+        @Override
+        protected void onPostExecute(BeverageCollection beverageCollection) {
+            mBeverageCollection = beverageCollection;
+            updateUI();
         }
     }
 }

@@ -14,7 +14,7 @@ import java.util.List;
 /**
  * Created by David Barnes on 11/5/2015.
  */
-public class BeveragePagerActivity extends FragmentActivity implements updatable {
+public class BeveragePagerActivity extends FragmentActivity {
 
     //String that can be used as a key for sendin data between activities
     private static final String EXTRA_BEVERAGE_ID = "edu.kvcc.cis298.cis298assignment4.beverage_id";
@@ -36,15 +36,17 @@ public class BeveragePagerActivity extends FragmentActivity implements updatable
         //set the content to the activity_beverage_pager layout
         setContentView(R.layout.activity_beverage_pager);
 
-        //Get the Beverage Id that was sent from the list view from the intent
-        String id = getIntent().getStringExtra(EXTRA_BEVERAGE_ID);
-
         //Get a handle to the view pager widget
         mViewPager = (ViewPager) findViewById(R.id.activity_beverage_pager_view_pager);
 
         //Get the beverages from the beverage collection
-        mBeverages = BeverageCollection.get(this,this).getBeverages();
+        new CollectionGetter().execute(this);
 
+    }
+
+    private void setUI(){
+        //Get the Beverage Id that was sent from the list view from the intent
+        String id = getIntent().getStringExtra(EXTRA_BEVERAGE_ID);
         //Create a fragment manager that the view pager adapter needs to operate
         FragmentManager fragmentManager = getSupportFragmentManager();
 
@@ -76,9 +78,11 @@ public class BeveragePagerActivity extends FragmentActivity implements updatable
         }
     }
 
-    @Override
-    public void update() {
-        mBeverages = BeverageCollection.get(this,this).getBeverages();
-        mViewPager.getAdapter().notifyDataSetChanged();
+    private class CollectionGetter extends BeverageCollection.BeverageCollectingGetter{
+        @Override
+        protected void onPostExecute(BeverageCollection beverageCollection) {
+            mBeverages = beverageCollection.getBeverages();
+            setUI();
+        }
     }
 }

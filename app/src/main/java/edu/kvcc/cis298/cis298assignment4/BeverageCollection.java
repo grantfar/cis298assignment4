@@ -3,6 +3,7 @@ package edu.kvcc.cis298.cis298assignment4;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
+import android.os.AsyncTask;
 import android.util.Log;
 
 import com.android.volley.Cache;
@@ -35,7 +36,7 @@ import edu.kvcc.cis298.cis298assignment4.data.JsonHandler;
  * Created by David Barnes on 11/3/2015.
  * This is a singleton that will store the data for our application
  */
-public class BeverageCollection implements updatable{
+public class BeverageCollection{
 
     //Static variable that represents this class
     private static BeverageCollection sBeverageCollection;
@@ -45,45 +46,52 @@ public class BeverageCollection implements updatable{
 
     private SQLiteDatabase mBeverageDataBase;
 
-    private updatable mUpdate;
     private boolean mDataLoaded;
 
     //public static method to get the single instance of this class
-    public static BeverageCollection get(Context context, updatable Update) {
+    public static BeverageCollection get(Context context) {
         //If the collection is null
         if (sBeverageCollection == null) {
             //make a new one
-            sBeverageCollection = new BeverageCollection(context,Update);
+            sBeverageCollection = new BeverageCollection(context);
         }
         //regardless of whether it was just made or not, return the instance
         return sBeverageCollection;
     }
 
     //Private constructor to create a new BeverageCollection
-    private BeverageCollection(Context context, updatable Update) {
+    private BeverageCollection(Context context) {
         //Set the context to the one that is passed in
         mContext = context;
         //Call the private method to load the beverage list
-        mUpdate = Update;
-        mDataLoaded = false;
-        mBeverageDataBase = new BeverageDBHelper(mContext,this).getWritableDatabase();
+        mBeverageDataBase = new BeverageDBHelper(mContext).getWritableDatabase();
     }
 
     //Getters
     public List<Beverage> getBeverages() {
         List<Beverage> beverages = new ArrayList<>();
-        if (mDataLoaded) {
-            BeverageCursorWrapper allBeverage = new BeverageCursorWrapper(mBeverageDataBase.query(BeverageTable.NAME, null, null, null, null, null, null));
-            while (allBeverage.hasContent()) {
-                beverages.add(allBeverage.getCurrent());
-                allBeverage.moveToNext();
-            }
+        BeverageCursorWrapper allBeverage = new BeverageCursorWrapper(mBeverageDataBase.query(BeverageTable.NAME, null, null, null, null, null, null));
+        allBeverage.toFirst();
+        while (allBeverage.hasContent()) {
+            beverages.add(allBeverage.getCurrent());
+            allBeverage.moveToNext();
         }
+        allBeverage.closeWrapper();
         return beverages;
     }
 
     public Beverage getBeverage(String Id) {
-        return null;
+        BeverageCursorWrapper theCursor = new BeverageCursorWrapper(mBeverageDataBase.query(BeverageTable.NAME,null,
+        BeverageTable.Cols.ID + " = ?",new String[]{Id},null,null,null));
+        theCursor.toFirst();
+        Beverage beverage = theCursor.getCurrent();
+        theCursor.closeWrapper();
+        return beverage;
+    }
+
+    //updates beverage in database
+    public void updateBeverage(Beverage b){
+        mBeverageDataBase.update(BeverageTable.NAME,getContentValues(b),BeverageTable.Cols.ID + " = ?",new String[]{b.getId()});
     }
 
     //Method to load the beverage list from a CSV file
@@ -103,9 +111,15 @@ public class BeverageCollection implements updatable{
         mBeverageDataBase.insert(BeverageTable.NAME,null,getContentValues(b));
     }
 
-    @Override
-    public void update() {
-        mDataLoaded = true;
-        mUpdate.update();
+    public static abstract class BeverageCollectingGetter extends AsyncTask<Context,Void,BeverageCollection>{
+        @Override
+        protected BeverageCollection doInBackground(Context... contexts) {
+            BeverageCollection tmp = BeverageCollection.get(contexts[0]);
+            return tmp;
+        }
+
+        @Override
+        protected abstract void onPostExecute(BeverageCollection beverageCollection);
     }
+
 }

@@ -1,24 +1,36 @@
 package edu.kvcc.cis298.cis298assignment4;
 
+import android.content.ContentResolver;
+import android.content.Intent;
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
+import android.provider.ContactsContract;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.Loader;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.EditText;
 
+import java.net.URL;
+
 /**
  * Created by David Barnes on 11/3/2015.
  */
-public class BeverageFragment extends Fragment implements updatable{
+public class BeverageFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor>{
 
     //String key that will be used to send data between fragments
     private static final String ARG_BEVERAGE_ID = "crime_id";
+
+    private static final int CONTACTREQUESTCODE = 1;
 
     //private class level vars for the model properties
     private EditText mId;
@@ -26,9 +38,13 @@ public class BeverageFragment extends Fragment implements updatable{
     private EditText mPack;
     private EditText mPrice;
     private CheckBox mActive;
+    private Button mContactButton;
+    private Button mSendButton;
 
     //Private var for storing the beverage that will be displayed with this fragment
     private Beverage mBeverage;
+    private String mEmail;
+    private String mContactName;
 
     //Public method to get a properly formatted version of this fragment
     public static BeverageFragment newInstance(String id) {
@@ -49,7 +65,35 @@ public class BeverageFragment extends Fragment implements updatable{
         //When created, get the beverage id from the fragment args.
         String beverageId = getArguments().getString(ARG_BEVERAGE_ID);
         //use the id to get the beverage from the singleton
-        mBeverage = BeverageCollection.get(getActivity(),this).getBeverage(beverageId);
+        mBeverage = BeverageCollection.get(getActivity()).getBeverage(beverageId);
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == CONTACTREQUESTCODE && data != null){
+            Uri ContactUri = data.getData();
+            String[] fields = new String[]{
+                    ContactsContract.Contacts._ID
+            };
+            ContentResolver contentResolver = getActivity().getContentResolver();
+
+            Cursor idCursor = contentResolver.query(ContactUri,fields,null,null,null);
+
+            idCursor.moveToFirst();
+            String Id = "";
+            if (!idCursor.isAfterLast()){
+                Id = idCursor.getString(idCursor.getColumnIndex(ContactsContract.Contacts._ID));
+            }
+            idCursor.close();
+
+            Cursor cursor = contentResolver.query(ContactsContract.Contacts.CONTENT_URI,new String[]{ContactsContract.CommonDataKinds.Email.ADDRESS},
+                    ContactsContract.CommonDataKinds.Email.CONTACT_ID + " = ?",new String[]{Id},null);
+
+            mEmail = cursor.getString(cursor.getColumnIndex(ContactsContract.CommonDataKinds.Email.ADDRESS));
+            if(!mEmail.isEmpty())
+                mSendButton.setClickable(true);
+        }
     }
 
     @Nullable
@@ -64,6 +108,10 @@ public class BeverageFragment extends Fragment implements updatable{
         mPack = (EditText) view.findViewById(R.id.beverage_pack);
         mPrice = (EditText) view.findViewById(R.id.beverage_price);
         mActive = (CheckBox) view.findViewById(R.id.beverage_active);
+        mContactButton = (Button) view.findViewById(R.id.beverage_contact);
+        mSendButton = (Button) view.findViewById(R.id.send_beverage);
+
+        mSendButton.setClickable(false);
 
         //Set the widgets to the properties of the beverage
         mId.setText(mBeverage.getId());
@@ -83,6 +131,7 @@ public class BeverageFragment extends Fragment implements updatable{
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 mBeverage.setId(s.toString());
+                BeverageCollection.get(getActivity()).updateBeverage(mBeverage);
             }
 
             @Override
@@ -99,6 +148,7 @@ public class BeverageFragment extends Fragment implements updatable{
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 mBeverage.setName(s.toString());
+                BeverageCollection.get(getActivity()).updateBeverage(mBeverage);
             }
 
             @Override
@@ -114,6 +164,7 @@ public class BeverageFragment extends Fragment implements updatable{
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 mBeverage.setPack(s.toString());
+                BeverageCollection.get(getActivity()).updateBeverage(mBeverage);
             }
 
             @Override
@@ -137,6 +188,7 @@ public class BeverageFragment extends Fragment implements updatable{
                 } else {
                     mBeverage.setPrice(0);
                 }
+                BeverageCollection.get(getActivity()).updateBeverage(mBeverage);
             }
 
             @Override
@@ -151,12 +203,29 @@ public class BeverageFragment extends Fragment implements updatable{
             }
         });
 
+        mContactButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent contactIntent = new Intent(Intent.ACTION_PICK, ContactsContract.Contacts.CONTENT_URI);
+                startActivityForResult(contactIntent,CONTACTREQUESTCODE);
+            }
+        });
         //Lastley return the view with all of this stuff attached and set on it.
         return view;
     }
 
     @Override
-    public void update() {
+    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+        return null;
+    }
+
+    @Override
+    public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
+
+    }
+
+    @Override
+    public void onLoaderReset(Loader<Cursor> loader) {
 
     }
 }

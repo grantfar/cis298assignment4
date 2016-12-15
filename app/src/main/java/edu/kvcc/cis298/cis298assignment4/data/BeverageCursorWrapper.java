@@ -28,6 +28,10 @@ public class BeverageCursorWrapper {
         return rowToBeverage();
     }
 
+    public void closeWrapper(){
+        mCursor.close();
+    }
+
     public void moveToNext(){
         mCursor.moveToNext();
     }
